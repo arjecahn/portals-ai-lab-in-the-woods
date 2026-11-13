@@ -4,6 +4,8 @@ const WORLDS = REGISTRY.WORLDS, SUITES = REGISTRY.SUITES || [];   // a tree whos
 import { RIDES, COMPANIONS, STYLES } from './extras.js';
 import { QUALITY_NAMES, gpuName } from './core/quality.js';
 import { setupAtlas } from './ui/atlas.js';
+import { setupFling } from './ui/fling.js';
+import { setupFreeFly } from './ui/freefly.js';
 import { flown, readTour, readSuite, worldLink, suiteLink, journeyLink, copyText, captioned, byline, loadHearts, saveHearts, openAbout, ABOUT_READY } from './ui/share.js';
 
 const q = new URLSearchParams(location.search);
@@ -155,7 +157,10 @@ async function boot() {
   // the opening world (the choosing is firstWorld in core/pick.js, so tools/ordertest.mjs runs the same code): one of the
   // openers this viewer has not seen (on a calm journey a calm one: the calm openers, or any calm world when no opener is
   // calm); when every opener has been seen, the best of the worlds not seen; then the openers seen longest ago
-  const opening = () => engine._first(defs);
+  // This fork always opens in the same world, the AI Lab in the Woods; from its portal on it is the ordinary Portals
+  // journey, whose next world the engine picks as it always did. ?start= still overrides it, and so does a journey link.
+  const HOME = 'ai-lab-in-the-woods';
+  const opening = () => defs.find((d) => d.id === HOME) || engine._first(defs);
   const first = only ? defs[0] : (start ? defs.find((d) => d.id === start) : opening()) || undefined;
   const second = only ? (nextId ? defs[1] || null : (q.has('loop') ? defs[0] : null)) : undefined;
   // Every visit opens in the antechamber: a small place between worlds with one portal ahead and the journey's first world
@@ -227,7 +232,9 @@ async function boot() {
   keepAwake(); document.addEventListener('visibilitychange', keepAwake); window.addEventListener('pointerdown', keepAwake, { passive: true });
 
   const bPause = $('b-pause');
-  const setPaused = (p) => { engine.settings.paused = p; bPause.classList.toggle('on', p); bPause.setAttribute('aria-label', p ? 'Play' : 'Pause'); keepAwake(); };
+  let freefly = null;   // flying the camera yourself (ui/freefly.js)
+  let fling = null;   // picking things up and flinging them while paused (ui/fling.js); made below, once toast exists
+  const setPaused = (p) => { engine.settings.paused = p; bPause.classList.toggle('on', p); bPause.setAttribute('aria-label', p ? 'Play' : 'Pause'); keepAwake(); if (fling) fling.paused(p); if (freefly) freefly.paused(p); };
   bPause.onclick = () => setPaused(!engine.settings.paused);
   $('r-speed').value = engine.settings.speed; $('r-speed').oninput = (e) => { engine.settings.speed = Number(e.target.value); }; $('r-speed').onchange = () => save();   // the pace is remembered
   $('r-strange').value = engine.settings.strangeness; $('r-strange').oninput = (e) => { engine.settings.strangeness = Number(e.target.value); };
@@ -244,6 +251,8 @@ async function boot() {
   let cameraSet = saved.cameraSet === true || saved.camera === 'steady';   // true once the visitor chose a camera themselves (reduced motion wins over a camera that was only saved along with another option)
   const save = () => { try { localStorage.setItem('portals.settings', JSON.stringify({ ride: engine.settings.ride, companion: engine.settings.companion, style: engine.settings.style, hour: engine.settings.hour, camera: engine.settings.camera, cameraSet, speed: engine.settings.speed, order: engine.settings.order, calm: engine.settings.calmOnly, kinds: engine.settings.kinds ? [...engine.settings.kinds] : [], quality: engine.qualitySetting, autoTier, titles: $('c-titles').checked, caption: $('c-caption').checked })); } catch (e) {} };
   const toast = (msg, ms = 2200) => { let t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); } t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms); };
+  fling = window.__fling = setupFling({ engine, canvas: $('view'), toast });
+  freefly = window.__freefly = setupFreeFly({ engine, canvas: $('view'), toast, button: $('b-fly') });
   const fill = (sel, list, key, none) => {
     sel.innerHTML = ''; const add = (v, label) => { const o = document.createElement('option'); o.value = v; o.textContent = label; sel.appendChild(o); };
     add('auto', 'Surprise me'); add('off', none); for (const d of list) add(d.id, d.name);

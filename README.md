@@ -1,4 +1,16 @@
-# Portals
+# Portals: the AI Lab in the Woods
+
+This is a fork of [emollick/ai-portals](https://github.com/emollick/ai-portals), Ethan Mollick's Portals, with three additions:
+
+- **A world of its own, *The AI Lab in the Woods*** ([src/worlds/ai-lab-in-the-woods.js](src/worlds/ai-lab-in-the-woods.js)): a flight through a Dutch wood that tells the story of a company learning to build and run its own AI, from a padlocked vendor cage at the edge of the wood to a board in a ring of beeches where colleagues pin the next process they want. Every visit starts there; from its portal on, it is the ordinary Portals journey.
+- **Fly yourself:** press V (or the paper-plane button), then W A S D to move, the mouse to look, E and Q for up and down, Shift to go faster. V again picks the route up where you are.
+- **Fling things:** pause (Space), pick up anything with the mouse and throw it; hold Shift while dragging to paint copies of it through the air. Z puts things back.
+
+This fork keeps the original's license, [CC BY-NC-SA 4.0](LICENSE): share it and build on it for non-commercial purposes, with credit, under the same license. The rest of this README is the original project's.
+
+---
+
+## Portals
 
 An endless, hands-off flight through 471 generated 3D worlds in a browser. Each world ends in a portal that opens on the next one, and nothing is steered: it flies itself. Live at [portals-endless-worlds.netlify.app](https://portals-endless-worlds.netlify.app) (press S for sound).
 

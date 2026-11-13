@@ -823,7 +823,8 @@ export class Engine {
     if (!cross) this.time += dt;
     const L = A.path.length, B = this.next && this.next.ready ? this.next : null;
 
-    if (!frozen && !cross) {
+    // (this.fly: the viewer has the camera, ui/freefly.js. The route is not flown and no portal is crossed; the world goes on living.)
+    if (!frozen && !cross && !this.fly) {
       let target = (L / A.duration) * this.settings.speed * (this.boost ? (this.gentle ? 2 : 5) : 1);   // hurrying to the portal is gentler on a gentle flight
       if (A.pace) target *= A.pace(A.dist / L);
       const remaining = L - A.dist;
@@ -856,6 +857,7 @@ export class Engine {
     if (!this.camInit || frozen) { this.camQuat.copy(_q); this.camInit = true; }
     else { this.arrived += dt; this._turn(this.camQuat, _q, dt); }
     cam.quaternion.copy(this.camQuat);
+    if (this.fly) { cam.position.copy(this.fly.position); cam.quaternion.copy(this.fly.quaternion); }
 
     // a feed world shows the next world itself, so its opening is open as soon as there is a next world
     const revealT = B ? (A.feed ? 1 : 1 - smoothstep(A.revealDist * 0.6, A.revealDist, remaining)) : 0;

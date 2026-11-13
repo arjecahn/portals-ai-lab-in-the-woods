@@ -23,7 +23,7 @@ body.active #hud { opacity: 1; pointer-events: auto; }
 #hud label, #panel label.slide { display: flex; align-items: center; gap: 8px; opacity: 0.85; white-space: nowrap; }
 #hud button { all: unset; cursor: pointer; padding: 6px 7px; border-radius: 8px; opacity: 0.85; display: flex; align-items: center; justify-content: center; }
 #hud button:hover, #hud button:focus-visible { opacity: 1; background: rgba(255,255,255,0.12); }
-#hud #b-gentle.on { opacity: 1; background: rgba(150,215,255,0.26); }
+#hud #b-gentle.on, #hud #b-fly.on { opacity: 1; background: rgba(150,215,255,0.26); }
 #toast.tap { pointer-events: auto; cursor: pointer; }
 .i { width: 17px; height: 17px; display: block; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 /* two-state buttons carry both pictures: .a normally, .b when the button is .on */
