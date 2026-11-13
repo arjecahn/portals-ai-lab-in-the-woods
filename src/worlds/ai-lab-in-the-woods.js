@@ -247,8 +247,9 @@ const boardMesh = (w, h, d, face, side) => new THREE.Mesh(new THREE.BoxGeometry(
 // the big board over the way in: 26 m across on two posts, so the flight comes over its top with the whole wood behind it
 function bigBoard(m) {
   const g = new THREE.Group(); g.name = 'groot-bord';
-  const face = plateMat([['AI Lab in the Woods', 0.42, 'italic 600 168px Georgia, serif', '#2f5a3a'],
-    ['Welcome. Mind the kabouters.', 0.76, '500 76px Georgia, serif', '#5a6a52']], { w: 2048, h: 640, bg: '#f4eedc', frame: '#2f5a3a', fw: 26, grain: 1 });
+  const face = plateMat([['AI Lab in the Woods', 0.33, 'italic 600 160px Georgia, serif', '#2f5a3a'],
+    ['Welcome. Mind the kabouters.', 0.6, '500 74px Georgia, serif', '#5a6a52'],
+    ['an adaptation of Ethan Mollick’s Portals experiment', 0.83, 'italic 500 78px Georgia, serif', '#6a7462']], { w: 2048, h: 640, bg: '#f4eedc', frame: '#2f5a3a', fw: 26, grain: 1 });
   const board = boardMesh(26, 8, 0.45, face, m.plank); board.position.y = 10; g.add(board);
   for (const px of [-10.5, 10.5]) { box(g, m.wood, 0.75, 10.4, 0.75, px, 0, -0.35); const br = box(g, m.wood, 0.45, 7.4, 0.45, px - Math.sign(px) * 2.4, 3.4, -2.6); br.rotation.x = -0.42; br.rotation.z = Math.sign(px) * 0.3; }
   for (const y of [6.4, 13.4]) box(g, m.wood, 25, 0.3, 0.3, 0, y, -0.3);
@@ -371,11 +372,11 @@ function noticeBoard(m) {
 // (broad, low, large-leaved), so the wood is made here: trunks with boughs as instances of a few shapes, bark drawn on a
 // canvas, crowns as many small cards of drawn leaves that take the light from the side the sun is on.
 const SPECIES = [
-  { name: 'eik', h: [19, 25], r: [0.2, 0.3], crown: [0.56, 1.0], spread: 4.6, cards: [30, 20], size: [2.4, 3.8], leaf: ['#4d8a2c', '#7fae3c', '#3a6e26'], bark: '#b0a494', tex: 'oak', shape: 0 },
-  { name: 'eik-slank', h: [17, 23], r: [0.15, 0.22], crown: [0.62, 1.0], spread: 3.6, cards: [24, 17], size: [2.2, 3.4], leaf: ['#56932e', '#8ab844', '#3f7428'], bark: '#a4988a', tex: 'oak', shape: 0 },
-  { name: 'berk', h: [15, 20], r: [0.1, 0.15], crown: [0.5, 1.0], spread: 2.8, cards: [20, 13], size: [1.9, 3.0], leaf: ['#74a83c', '#a4c858', '#588c30'], bark: '#e8e4da', tex: 'birch', shape: 1 },
+  { name: 'eik', h: [23, 30], r: [0.24, 0.36], crown: [0.5, 1.0], spread: 5.6, cards: [30, 20], size: [2.4, 3.8], leaf: ['#4d8a2c', '#7fae3c', '#3a6e26'], bark: '#b0a494', tex: 'oak', shape: 0 },
+  { name: 'eik-slank', h: [21, 28], r: [0.17, 0.25], crown: [0.55, 1.0], spread: 4.4, cards: [24, 17], size: [2.2, 3.4], leaf: ['#56932e', '#8ab844', '#3f7428'], bark: '#a4988a', tex: 'oak', shape: 0 },
+  { name: 'berk', h: [17, 23], r: [0.11, 0.16], crown: [0.45, 1.0], spread: 3.3, cards: [20, 13], size: [1.9, 3.0], leaf: ['#74a83c', '#a4c858', '#588c30'], bark: '#e8e4da', tex: 'birch', shape: 1 },
   { name: 'els', h: [13, 18], r: [0.12, 0.18], crown: [0.42, 1.0], spread: 2.6, cards: [20, 13], size: [2.0, 3.0], leaf: ['#3c6e2c', '#5a8a36', '#2c5424'], bark: '#7a7064', tex: 'oak', shape: 1 },
-  { name: 'beuk', h: [30, 34], r: [0.5, 0.62], crown: [0.4, 1.0], spread: 10.5, cards: [90, 60], size: [3.4, 5.4], leaf: ['#5a9632', '#96c24a', '#3e7628'], bark: '#c8c6bc', tex: 'beech', shape: 2 },
+  { name: 'beuk', h: [40, 46], r: [0.68, 0.82], crown: [0.34, 1.0], spread: 14, cards: [130, 80], size: [3.4, 5.4], leaf: ['#5a9632', '#96c24a', '#3e7628'], bark: '#c8c6bc', tex: 'beech', shape: 2 },
   { name: 'opslag', h: [3.5, 7], r: [0.03, 0.05], crown: [0.35, 1.0], spread: 1.3, cards: [7, 0], size: [1.2, 2.0], leaf: ['#7ab23e', '#a8d058', '#5c9634'], bark: '#8a8072', tex: 'oak', shape: 1 },
   // the layers under the roof, which make the wood close and woolly: shrubs leafed to the ground (rowan, juneberry, hazel, elder,
   // holly), young trees that fill the space between the shrubs and the crowns, and the bramble mat over the floor
@@ -442,7 +443,9 @@ function trunkGeometry(shape, rng) {
   return G;
 }
 // points: [{ x, y, z, s, d, v }] (v: index into SPECIES). -> { object, update(dt, t), dispose() }
-function makeWood(points, rng, sunDir) {
+// detail: the machine's level of detail (ctx.quality.detail); the crowns are leafed more thickly the more it can carry
+function makeWood(points, rng, sunDir, detail = 1) {
+  const LUSH = 1 + 1.5 * clamp(detail, 0, 1), LUSH_FAR = 1 + 0.9 * clamp(detail, 0, 1), BIG = 1.45;   // more leaves, larger sprays: a full, woolly summer wood
   const object = new THREE.Group(); object.name = 'het-bos';
   const time = { value: 0 }, disposables = [];
   const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), Pv = new THREE.Vector3(), Sv = new THREE.Vector3(), col = new THREE.Color(), up = new THREE.Vector3(0, 1, 0), out = new THREE.Vector3(), eul = new THREE.Euler();
@@ -469,7 +472,7 @@ function makeWood(points, rng, sunDir) {
     quad(0.5, 0, 0, 0, 0.08, 0.5); quad(0.5, 0.1, 0, 0, 0.42, -0.26); quad(0, 0.1, 0.5, 0.26, 0.42, 0);   // one lying nearly flat, two leaning: a spray, not a ball
     card.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); card.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); card.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); card.setIndex(idx); }
   const ltex = leafTexture(rng.fork('leaf'));
-  const lmat = new THREE.MeshStandardMaterial({ map: ltex, alphaTest: 0.38, side: THREE.DoubleSide, roughness: 0.78, metalness: 0, emissive: '#ffffff', emissiveMap: ltex, emissiveIntensity: 0.0 });
+  const lmat = new THREE.MeshStandardMaterial({ map: ltex, alphaTest: 0.32, side: THREE.DoubleSide, roughness: 0.78, metalness: 0, emissive: '#ffffff', emissiveMap: ltex, emissiveIntensity: 0.0 });
   lmat.onBeforeCompile = (sh) => {
     sh.uniforms.uWoodTime = time; sh.uniforms.uWoodSun = { value: sunDir.clone() };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uWoodTime; varying float vWoodThru;')
@@ -483,11 +486,11 @@ function makeWood(points, rng, sunDir) {
           totalEmissiveRadiance = diffuseColor.rgb * vec3(1.25, 1.2, 0.55) * (0.1 + 0.75 * thru); }`);
   };
   lmat.customProgramCacheKey = () => 'woods-leaves';
-  let total = 0; for (const p of points) { const sp = SPECIES[p.v]; p.cards = p.d < 55 ? sp.cards[0] : sp.cards[1]; total += p.cards; }
+  let total = 0; for (const p of points) { const sp = SPECIES[p.v]; p.cards = Math.round(p.d < 55 ? sp.cards[0] * LUSH : sp.cards[1] * LUSH_FAR); total += p.cards; }
   const leaves = new THREE.InstancedMesh(card, lmat, total); leaves.name = 'kruinen'; let n = 0;
   const cA = new THREE.Color(), cB = new THREE.Color(), cC = new THREE.Color();
   for (const p of points) {
-    const sp = SPECIES[p.v], far = p.d >= 55, y0 = p.H * sp.crown[0], y1 = p.H * sp.crown[1], cy = (y0 + y1) / 2, ry = (y1 - y0) / 2, rr = sp.spread * p.s * (p.H / ((sp.h[0] + sp.h[1]) / 2));
+    const sp = SPECIES[p.v], far = p.d >= 55, y0 = p.H * Math.max(sp.crown[0] * 0.8, sp.crown[0] - 0.1), y1 = p.H * sp.crown[1], cy = (y0 + y1) / 2, ry = (y1 - y0) / 2, rr = 1.12 * sp.spread * p.s * (p.H / ((sp.h[0] + sp.h[1]) / 2));   // crowns a little deeper and wider
     cA.set(sp.leaf[0]); cB.set(sp.leaf[1]); cC.set(sp.leaf[2]);
     const vr = sp.vary || 0, tone = rng.range(0.88 - vr, 1.1 + vr * 0.4), warm = vr ? rng.range(-vr, vr) : 0;
     if (vr) { cA.offsetHSL(warm * 0.06, 0, 0); cB.offsetHSL(warm * 0.06, 0, 0); }   // one shrub yellower, the next bluer and darker: several kinds grow together
@@ -497,7 +500,7 @@ function makeWood(points, rng, sunDir) {
       out.set(Math.cos(a) * w, v * 0.9 + 0.25, Math.sin(a) * w).normalize();
       Pv.set(p.x + Math.cos(a) * w * rr * shell, p.y + cy + v * ry, p.z + Math.sin(a) * w * rr * shell);
       Q.setFromUnitVectors(up, out.lerp(up, 0.35).normalize()); Q.multiply(new THREE.Quaternion().setFromAxisAngle(up, rng.range(0, TAU)));
-      const size = rng.range(sp.size[0], sp.size[1]) * (far ? 2.0 : 1) * Math.min(1.25, p.s);
+      const size = BIG * rng.range(sp.size[0], sp.size[1]) * (far ? 2.0 : 1) * Math.min(1.25, p.s);
       M4.compose(Pv, Q, Sv.set(size, size, size)); leaves.setMatrixAt(n, M4);
       const light = 0.5 + 0.5 * v, sun = Math.max(0, Math.cos(a) * sunDir.x + Math.sin(a) * sunDir.z);
       col.copy(cC).lerp(cA, Math.min(1, light * 1.2)).lerp(cB, 0.55 * light * shell + 0.3 * sun).multiplyScalar(tone * (0.72 + 0.28 * shell) * rng.range(0.9, 1.08));
@@ -699,14 +702,14 @@ export default {
     under(8, { count: 5200, radius: 40, corridor: 1.7, spacing: 0.85, falloff: 0.6, scale: [0.8, 1.3], density: (x, z) => inWood(x, z) * patchy(x, z, 0.09, 0.15) });
     under(6, { bounds: [-400, -230, 120, 330], count: 1700, spacing: 3.6, scale: [0.9, 1.5], density: (x, z) => (forestAt(x, z) && pathD(x, z) > 62 ? 1 : 0) });
     await ctx.yield();
-    const wood = await attempt('wood', () => makeWood(treePts, rng.fork('wood'), sunDir));
+    const wood = await attempt('wood', () => makeWood(treePts, rng.fork('wood'), sunDir, ctx.quality?.detail ?? 1));
     await ctx.yield();
     const dapple = await attempt('dapple', () => makeDapple(hAt, (x, z) => (forestAt(x, z) && !beltAt(x, z) ? 1 : 0), [-320, -240, 120, 340], rng.fork('dapple')));
     await ctx.yield();
 
     // ----- under the trees and in the grass -----
     const shade = undefined, tmpC = new THREE.Color(), gCol = (x, z, y) => groundColor(x, z, y, 1, tmpC);
-    await attempt('ferns', () => flora.makeFerns({ rng: rng.fork('ferns'), path, radius: 42, corridor: 1.6, count: 1100, scale: [0.4, 0.85], heightAt: hAt, wind, map: treeMat.map, density: (x, z) => (forestAt(x, z) ? 1 : 0) }));
+    await attempt('ferns', () => flora.makeFerns({ rng: rng.fork('ferns'), path, radius: 50, corridor: 1.6, count: 2600, scale: [0.55, 1.15], heightAt: hAt, wind, map: treeMat.map, density: (x, z) => (forestAt(x, z) ? 1 : 0) }));
     await ctx.yield();
     // the bramble mat under the oaks, and the hedgerows between the meadows
     await attempt('brambles', () => flora.makeBushes({ rng: rng.fork('bramble'), path, radius: 60, corridor: 3.5, count: 420, heightAt: hAt, wind, map: treeMat.map, scale: [0.6, 1.3],
@@ -808,7 +811,7 @@ export default {
     // ----- air: pollen in the low sun, a thread of smoke from the Gatehouse stove, a little mist over the wet meadow -----
     const time = { value: 0 }, set = fx.fxGroup(); scene.add(set.object);
     const tryFx = (what, fn) => { try { return set.add(fn()); } catch (e) { warn(what, e); return null; } };
-    tryFx('pollen', () => fx.makeParticles({ rng: rng.fork('pollen'), preset: 'pollen', time, count: 420, box: [46, 12, 46], follow: 'xz', center: [0, G + 5, 0], opacity: 0.5, lightDir: sunDir }));
+    tryFx('pollen', () => fx.makeParticles({ rng: rng.fork('pollen'), preset: 'pollen', time, count: 1100, box: [56, 16, 56], follow: 'xz', center: [0, G + 5, 0], opacity: 0.7, lightDir: sunDir }));
     { const p = gr.userData.pipe.clone().applyMatrix4(gr.updateMatrixWorld(true) || gr.matrixWorld);
       tryFx('smoke', () => fx.makeSmokeColumn({ rng: rng.fork('smoke'), time, position: [p.x, p.y, p.z], count: 34, height: 11, radius: [0.12, 1.6], size: [0.5, 3.4], color: '#cfc9c0', colorTop: '#efe9df', shadowColor: '#8a857c',
         opacity: 0.4, rate: 0.09, wind: [0.9, 0, -0.5], bend: 0.9, rim: 0.4, scatter: 0.4, sunDir, sunColor: sunCol })); }
@@ -816,10 +819,14 @@ export default {
     { const down = sunDir.clone().negate(), rayCol = '#ffe6ae';
       const shafts = (label, x, z, o) => tryFx(label, () => { const len = o.length, src = new THREE.Vector3(x, G + 1, z).addScaledVector(down, -len * 0.92);
         return fx.makeGodRays({ rng: rng.fork(label), time, position: [src.x, src.y, src.z], direction: [down.x, down.y, down.z], color: rayCol, ...o }); });
-      shafts('rays-oak', -46, -13, { radius: 20, count: 12, length: 62, width: [1.5, 5.5], intensity: 0.6 });
-      shafts('rays-lane', -40, -54, { radius: 22, count: 12, length: 62, width: [1.5, 5.5], intensity: 0.6 });
-      shafts('rays-ring', RING.x, RING.z, { radius: 13, count: 16, length: 84, width: [2, 7], intensity: 0.9 }); }
-    tryFx('mist', () => fx.makeGroundFog({ time, layers: 4, size: 620, y: G + 0.4, height: 3.2, color: '#f6e4b4', opacity: 0.11, coverage: 0.5, scale: 0.012, wind: [0.5, -0.3], sunDir, sunColor: sunCol, scatter: 0.5 }));
+      // (the light falls in through the roof wherever the way runs under trees: the track in, the edge of the meadow, the wood to the ring)
+      shafts('rays-track', -232, 44, { radius: 22, count: 14, length: 70, width: [1.5, 6], intensity: 1.1 });
+      shafts('rays-edge', -97, 36, { radius: 18, count: 12, length: 66, width: [1.5, 6], intensity: 1.0 });
+      shafts('rays-oak', -46, -13, { radius: 22, count: 16, length: 70, width: [1.5, 6.5], intensity: 1.15 });
+      shafts('rays-lane', -40, -54, { radius: 24, count: 16, length: 70, width: [1.5, 6.5], intensity: 1.15 });
+      shafts('rays-clearing', -92, -64, { radius: 26, count: 14, length: 72, width: [2, 7], intensity: 1.0 });
+      shafts('rays-ring', RING.x, RING.z, { radius: 16, count: 24, length: 100, width: [2, 8], intensity: 1.6 }); }
+    tryFx('mist', () => fx.makeGroundFog({ time, layers: 4, size: 620, y: G + 0.4, height: 3.2, color: '#f6e4b4', opacity: 0.15, coverage: 0.55, scale: 0.012, wind: [0.5, -0.3], sunDir, sunColor: sunCol, scatter: 0.5 }));
     await ctx.yield();
 
     // ----- where the eye goes -----
@@ -848,7 +855,7 @@ export default {
       camera: { fov: 60, near: 0.3, far: 2400, lookAhead: 20, sway: 0.5, bank: 0.4 },
       pois,
       portal: { shape: 'circle', radius: 3.8, color: '#fff3cf', glow: 1.3, revealDistance: 120 },
-      post: { exposure: 1.04, bloom: { strength: 0.46, radius: 0.7, threshold: 0.88 } },
+      post: { exposure: 1.04, bloom: { strength: 0.58, radius: 0.75, threshold: 0.84 } },
       // brisk between the stations of the story, slow enough at each to read its board
       pace: (u) => { let k = 1; for (const r of READ) k = Math.min(k, 0.36 + 0.64 * smoothstep(0.014, 0.045, Math.abs(u - r))); return (u < 0.07 ? 1.5 : 1.25) * k; },
       update(dt, t, camera, u) {
