@@ -104,6 +104,8 @@ export function setupAtlas({ worlds, suites = [], engine, setPaused, optionsButt
   };
 
   const byName = (a, b) => (a.name || a.id).localeCompare(b.name || b.id);
+  // this fork's own world leads the gallery under a heading of its own, as it opens every visit
+  const HOME = 'ai-lab-in-the-woods';
   const isBook = (w) => !w.after && !!w.book;
   const isMedia = (w) => !w.after && !w.book && (!!w.screen || !!w.music || w.category === 'screen');
   const mediaIs = (w) => (w.music ? 'music' : w.screenKind === 'series' ? 'tv' : 'film');
@@ -133,6 +135,7 @@ export function setupAtlas({ worlds, suites = [], engine, setPaused, optionsButt
     const all = shown.length === list.length, n = nSeen();
     count.textContent = seen ? (all ? 'You have seen ' + n + ' of ' + list.length + ' worlds' : shown.length + ' of ' + list.length + ' worlds · you have seen ' + n) : all ? list.length + ' worlds' : shown.length + ' of ' + list.length + ' worlds';
     if (showSel) { showSel.value = show; showOptions(); }
+    const home = shown.filter((w) => w.id === HOME); section(grid, 'Start here', home); shown = shown.filter((w) => w.id !== HOME);
     if (show === 'all') shelf(grid, f);
     const favs = el('div', 'atlas-favs'); grid.appendChild(favs); drawFavs(favs);
     const plain = (title, ws) => section(grid, title, ws);
@@ -158,7 +161,7 @@ export function setupAtlas({ worlds, suites = [], engine, setPaused, optionsButt
         for (const b of series) { const of = ws.filter((w) => w.book === b), who = (of[0].author || '').split(',')[0]; plain('From ' + b + (who ? ' by ' + who : ''), of); }
       }
     }
-    if (!shown.length && !grid.querySelector('.atlas-journey')) grid.appendChild(el('p', 'atlas-none', f ? 'No world by that name.' : show === 'hearts' ? 'No favourites yet. The heart on a card, or H during the journey, keeps a world.' : show === 'unseen' ? 'You have seen every world.' : 'No world by that name.'));
+    if (!shown.length && !home.length && !grid.querySelector('.atlas-journey')) grid.appendChild(el('p', 'atlas-none', f ? 'No world by that name.' : show === 'hearts' ? 'No favourites yet. The heart on a card, or H during the journey, keeps a world.' : show === 'unseen' ? 'You have seen every world.' : 'No world by that name.'));
   };
 
   const build = () => {

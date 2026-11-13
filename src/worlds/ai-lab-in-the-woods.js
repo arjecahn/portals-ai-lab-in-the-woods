@@ -1,4 +1,4 @@
-// THE AIMABLE AI LAB IN THE WOODS
+// THE AI LAB IN THE WOODS
 // A lab that is a wood: fifteen hectares of flat sandy ground, three metres above the sea, with a brook through the middle.
 // Old oak coppice grown tall, wetter alder and birch to the north, three meadows inside their hedgerows, a farmhouse and a
 // handful of plain huts, and in the middle of the wood a ring of six old beeches round a small pool, with a swing.
@@ -244,8 +244,8 @@ const boardMesh = (w, h, d, face, side) => new THREE.Mesh(new THREE.BoxGeometry(
 // the big board over the way in: 26 m across on two posts, so the flight comes over its top with the whole wood behind it
 function bigBoard(m) {
   const g = new THREE.Group(); g.name = 'groot-bord';
-  const face = plateMat([['AIMABLE', 0.27, '700 150px Georgia, serif', '#1d3b2a'], ['AI Lab in the Woods', 0.55, 'italic 600 128px Georgia, serif', '#2f5a3a'],
-    ['Welcome. Mind the kabouters.', 0.83, '500 60px Georgia, serif', '#5a6a52']], { w: 2048, h: 640, bg: '#f4eedc', frame: '#2f5a3a', fw: 26, grain: 1 });
+  const face = plateMat([['AI Lab in the Woods', 0.42, 'italic 600 168px Georgia, serif', '#2f5a3a'],
+    ['Welcome. Mind the kabouters.', 0.76, '500 76px Georgia, serif', '#5a6a52']], { w: 2048, h: 640, bg: '#f4eedc', frame: '#2f5a3a', fw: 26, grain: 1 });
   const board = boardMesh(26, 8, 0.45, face, m.plank); board.position.y = 10; g.add(board);
   for (const px of [-10.5, 10.5]) { box(g, m.wood, 0.75, 10.4, 0.75, px, 0, -0.35); const br = box(g, m.wood, 0.45, 7.4, 0.45, px - Math.sign(px) * 2.4, 3.4, -2.6); br.rotation.x = -0.42; br.rotation.z = Math.sign(px) * 0.3; }
   for (const y of [6.4, 13.4]) box(g, m.wood, 25, 0.3, 0.3, 0, y, -0.3);
