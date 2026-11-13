@@ -235,7 +235,10 @@ function plateMat(lines, o = {}) {
   if (o.grain) for (let k = 0; k < 160; k++) { x.fillStyle = `rgba(90,70,40,${0.02 + 0.03 * ((k * 7) % 5) / 5})`; x.fillRect(0, (k / 160) * h, w, 1 + (k % 3)); }   // boards, not paper
   if (o.frame) { x.strokeStyle = o.frame; x.lineWidth = o.fw ?? 10; x.strokeRect((o.fw ?? 10) / 2, (o.fw ?? 10) / 2, w - (o.fw ?? 10), h - (o.fw ?? 10)); }
   x.textAlign = 'center'; x.textBaseline = 'middle';
-  for (const L of lines) { x.fillStyle = L[3] || o.fg || '#2b2a26'; x.font = L[2]; x.fillText(L[0], o.x ?? w / 2, L[1] * h); }
+  const room = o.room ?? w * 0.9;   // the widest a line may run; a longer one is set smaller until it fits
+  for (const L of lines) { x.fillStyle = L[3] || o.fg || '#2b2a26'; let px = +(/(\d+)px/.exec(L[2]) || [0, 40])[1]; x.font = L[2];
+    while (px > 12 && x.measureText(L[0]).width > room) { px -= 2; x.font = L[2].replace(/\d+px/, px + 'px'); }
+    x.fillText(L[0], o.x ?? w / 2, L[1] * h); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return new THREE.MeshStandardMaterial({ map: t, roughness: 0.84, metalness: 0 });
 }
@@ -305,7 +308,7 @@ function planPost(m) {
   const arms = [['1', 'connect your sources, pick one process', 3.0, 0.35], ['2', 'your team builds it, the first time with us', 2.25, -0.55], ['3', 'your people build the next process', 1.5, 0.15]];
   for (const [n, t, y, ry] of arms) {
     const h = new THREE.Group(); h.rotation.y = ry; g.add(h);
-    const a = boardMesh(3.4, 0.62, 0.07, plateMat([[t, 0.56, '600 66px Georgia, serif', '#1f1e1b']], { w: 1300, h: 230, bg: '#f2ecd8', frame: '#2f5a3a', fw: 8, grain: 1, x: 730 }), m.woodPale);
+    const a = boardMesh(3.4, 0.62, 0.07, plateMat([[t, 0.56, '600 66px Georgia, serif', '#1f1e1b']], { w: 1300, h: 230, bg: '#f2ecd8', frame: '#2f5a3a', fw: 8, grain: 1, x: 760, room: 1020 }), m.woodPale);
     a.position.set(1.75, y, 0); h.add(a);
     const nn = boardMesh(0.5, 0.5, 0.075, plateMat([[n, 0.58, '700 150px Georgia, serif', '#f2ecd8']], { w: 256, h: 256, bg: '#2f5a3a' }), m.woodPale);
     nn.position.set(0.32, y, 0.01); h.add(nn);
