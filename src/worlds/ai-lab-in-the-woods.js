@@ -62,7 +62,8 @@ const M = () => ({
   plank: mat('#2e2620'), brown: mat('#6a4a30'), green: mat('#3f6a48'), greenDark: mat('#24402c'), wood: mat('#7a6248'), woodPale: mat('#a48c68'),
   soil: mat('#3a2c20', { roughness: 1 }), leafy: mat('#4f7a34'), glass: mat('#ffd9a0', { emissive: '#ffb860', glow: 0.9, roughness: 0.4 }), stone: mat('#8d8a82'),
   hive: mat('#d9c68a'), iron: mat('#1c1c1c', { roughness: 0.6 }), rope: mat('#b79a68'),
-  shedWood: mat('#6b6354', { roughness: 1 }), chair: mat('#4a5a6a', { roughness: 0.6 }), pane: mat('#26323a', { roughness: 0.15 }), screen: mat('#cfe9ff', { emissive: '#6fc6ff', glow: 3.2, roughness: 0.25 }), led: mat('#bfe9ff', { emissive: '#49c8ff', glow: 2.4 }),
+  shedWood: mat('#6b6354', { roughness: 1 }), blanket: mat('#a8402e', { roughness: 0.9, side: THREE.DoubleSide }), owl: mat('#7a5a3c'), owlFace: mat('#c9ab82'), owlEye: mat('#1a1410', { roughness: 0.2 }),
+  frog: mat('#4e8a2c', { roughness: 0.45 }), frogBelly: mat('#d8d29a', { roughness: 0.5 }), lily: mat('#3e7a30', { roughness: 0.6, side: THREE.DoubleSide }), lilyFlower: mat('#f6e6ee', { emissive: '#ffd8e8', glow: 0.25 }), chair: mat('#4a5a6a', { roughness: 0.6 }), pane: mat('#26323a', { roughness: 0.15 }), screen: mat('#cfe9ff', { emissive: '#6fc6ff', glow: 3.2, roughness: 0.25 }), led: mat('#bfe9ff', { emissive: '#49c8ff', glow: 2.4 }),
   brass: mat('#b9923a', { roughness: 0.35 }), steel: mat('#6e7276', { roughness: 0.5 }), paleRed: mat('#8e3a2c'), frame: mat('#f4f1e8'), frameYellow: mat('#dcae3a'), ridge: mat('#b5553c'), plinth: mat('#1d1b1a'), thatchGrey: mat('#847e6c', { roughness: 1 }),
   cabin: mat('#1f3327', { roughness: 0.7 }), rust: mat('#5a3424', { roughness: 0.95 }), shutter: mat('#3f8a52'), glow: mat('#ffd9a0', { emissive: '#ffb860', glow: 0.7, roughness: 0.4 }),
 });
@@ -314,6 +315,7 @@ function planPost(m) {
     const nn = boardMesh(0.5, 0.5, 0.075, plateMat([[n, 0.58, '700 150px Georgia, serif', '#f2ecd8']], { w: 256, h: 256, bg: '#2f5a3a' }), m.woodPale);
     nn.position.set(0.32, y, 0.01); h.add(nn);
   }
+  const o = owl(m); o.position.y = 3.4; g.add(o); g.userData.owl = o;   // an owl keeps watch from the top of the post
   return g;
 }
 // any model, switch anytime: a weathervane that never settles, over the clearing
@@ -363,6 +365,79 @@ function noticeBoard(m) {
   const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
   const b = boardMesh(3.6, 2.3, 0.14, face, m.wood); b.position.y = 2.3; g.add(b);
   gable(g, m.tar, 3.9, 0.45, 0.5, 0, 3.45, 0, 0.3); for (const px of [-1.5, 1.5]) box(g, m.wood, 0.16, 2.4, 0.16, px, 0, -0.1);
+  return g;
+}
+
+// ---------- the romance of the place: fires, lanterns, a hammock, an owl, frogs ----------
+// a radial glow, drawn once, laid on the ground round a fire
+let _glowTex = null;
+function glowTexture() {
+  if (_glowTex) return _glowTex;
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.55)'); g.addColorStop(0.6, 'rgba(255,255,255,0.15)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128); _glowTex = new THREE.CanvasTexture(c); _glowTex.colorSpace = THREE.SRGBColorSpace; return _glowTex;
+}
+// a campfire: a ring of stones, logs leaning together, flames that never hold still, coals, a warm pool of light on the
+// ground, and logs to sit on round it (one with a blanket over it)
+function campfire(m, rng) {
+  const g = new THREE.Group(); g.name = 'kampvuur';
+  for (let k = 0; k < 13; k++) { const a = (k / 13) * TAU, st = new THREE.Mesh(new THREE.SphereGeometry(0.2 + 0.08 * ((k * 7) % 3), 7, 5), m.stone); st.position.set(Math.cos(a) * 0.95, 0.08, Math.sin(a) * 0.95); st.scale.y = 0.6; g.add(st); }
+  for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU + 0.3, l = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 1.15, 6), m.brown); l.position.set(Math.cos(a) * 0.3, 0.38, Math.sin(a) * 0.3); l.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6); g.add(l); }
+  const coal = new THREE.Mesh(new THREE.CircleGeometry(0.55, 18), new THREE.MeshBasicMaterial({ color: '#ff5a1a' })); coal.rotation.x = -Math.PI / 2; coal.position.y = 0.07; g.add(coal);
+  const fl = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const mats = [fl('#ffcf6a'), fl('#ff7a22'), fl('#ffa040')], flames = [];
+  for (let k = 0; k < 7; k++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.2 + 0.05 * (k % 3), 1.0, 7, 1, true), mats[k % 3]); f.geometry.translate(0, 0.5, 0); f.position.set(rng.range(-0.18, 0.18), 0.12, rng.range(-0.18, 0.18)); g.add(f); flames.push({ o: f, ph: rng() * 10, s: rng.range(0.7, 1.25) }); }
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: glowTexture(), color: '#ff9440', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.09; g.add(pool);
+  for (let k = 0; k < 3; k++) { const a = (k / 3) * TAU + 0.5, seat = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 1.9, 9), m.wood); seat.rotation.z = Math.PI / 2; seat.rotation.y = -a; seat.position.set(Math.cos(a) * 2.3, 0.22, Math.sin(a) * 2.3); g.add(seat);
+    if (k === 0) { const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.62), m.blanket); b.position.set(Math.cos(a) * 2.3, 0.45, Math.sin(a) * 2.3); b.rotation.y = -a + Math.PI / 2; g.add(b); } }
+  g.userData.update = (t) => {
+    for (const f of flames) { const k = 0.7 + 0.35 * Math.sin(t * 9 + f.ph) * Math.sin(t * 5.3 + f.ph * 2); f.o.scale.set(f.s * (0.9 + 0.12 * Math.sin(t * 7 + f.ph)), f.s * k * 1.25, f.s * (0.9 + 0.12 * Math.cos(t * 6 + f.ph))); f.o.rotation.y = t * 0.7 + f.ph; }
+    pool.material.opacity = 0.42 + 0.1 * Math.sin(t * 7.3) * Math.sin(t * 3.1);
+  };
+  return g;
+}
+// a lantern post: a crook of wood with a lantern on its hook (the lanterns themselves are the kit's, all in one draw)
+function lanternPost(m) {
+  const g = new THREE.Group(); g.name = 'lantaarnpaal';
+  box(g, m.wood, 0.1, 3.1, 0.1, 0, 0, 0); const arm = box(g, m.wood, 0.75, 0.07, 0.07, 0.33, 2.95, 0); arm.rotation.z = 0.08;
+  return g;
+}
+// the hammock: slung between two posts, with a blanket and a book left in it
+function hammock(m) {
+  const g = new THREE.Group(); g.name = 'hangmat';
+  for (const x of [-2.2, 2.2]) { const p = box(g, m.wood, 0.14, 2.0, 0.14, x, 0, 0); p.rotation.z = -Math.sign(x) * 0.08; }
+  const sheet = new THREE.PlaneGeometry(3.2, 0.95, 16, 4); sheet.rotateX(-Math.PI / 2);
+  const P = sheet.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); P.setY(i, 1.35 - 0.55 * (1 - (x / 1.6) ** 2) + 0.16 * (z / 0.475) ** 2 * (1 - (x / 1.6) ** 2)); }
+  sheet.computeVertexNormals(); g.add(new THREE.Mesh(sheet, m.blanket));
+  for (const sx of [-1, 1]) { const r = box(g, m.rope, 0.66, 0.03, 0.03, sx * 1.93, 1.55, 0); r.rotation.z = sx * 0.62; }
+  box(g, m.paleRed, 0.28, 0.06, 0.2, 0.3, 0.84, 0.05);   // the book
+  return g;
+}
+// a tawny owl: perched, turning its head now and then to look at whoever goes by
+function owl(m) {
+  const g = new THREE.Group(); g.name = 'uil';
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), m.owl); body.scale.set(1, 1.35, 0.9); body.position.y = 0.2; g.add(body);
+  const head = new THREE.Group(); head.position.y = 0.43; g.add(head);
+  const h = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), m.owl); h.scale.set(1.1, 0.95, 1); head.add(h);
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.11, 14), m.owlFace); face.position.set(0, 0, 0.13); head.add(face);
+  for (const sx of [-0.05, 0.05]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), m.owlEye); e.position.set(sx, 0.015, 0.145); head.add(e); }
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.05, 5), m.horn); beak.rotation.x = Math.PI / 2 + 0.4; beak.position.set(0, -0.03, 0.15); head.add(beak);
+  g.userData.head = head; return g;
+}
+// frogs: green, larger than life so they can be seen from the way, sitting by the water; one hops now and then and their throats swell
+function frogs(m, spots, rng, hAt) {
+  const g = new THREE.Group(); g.name = 'kikkers'; const list = [];
+  for (const [x, z, y, ry] of spots) {
+    const f = new THREE.Group(); f.position.set(x, y ?? hAt(x, z), z); f.rotation.y = ry ?? rng() * TAU; f.scale.setScalar(rng.range(0.5, 0.65));
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), m.frog); b.scale.set(0.9, 0.55, 1.15); b.position.y = 0.3; b.rotation.x = -0.25; f.add(b);
+    for (const sx of [-0.22, 0.22]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), m.frog); e.position.set(sx, 0.58, 0.32); f.add(e); const p = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), m.iron); p.position.set(sx * 1.1, 0.62, 0.42); f.add(p);
+      const leg = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), m.frog); leg.scale.set(0.7, 0.45, 1.3); leg.position.set(sx * 2.1, 0.12, -0.2); f.add(leg); }
+    const throat = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), m.frogBelly); throat.position.set(0, 0.2, 0.42); f.add(throat);
+    g.add(f); list.push({ f, throat, y0: f.position.y, ph: rng() * 20, hop: rng.range(5, 11) });
+  }
+  g.userData.update = (t) => { for (const q of list) { const c = (t + q.ph) % q.hop, j = c < 0.55 ? Math.sin((c / 0.55) * Math.PI) : 0; q.f.position.y = q.y0 + j * 0.45 * q.f.scale.x * 2.5;
+    const s = 1 + 0.7 * Math.max(0, Math.sin((t + q.ph) * 3.2)) ** 6; q.throat.scale.set(s, s, s); } };
   return g;
 }
 
@@ -611,12 +686,19 @@ export default {
     const edge = (x, z) => 3 * noise.n2(x * 0.03 + 3, z * 0.03 - 7);
     const SITES = { house: [0, 0], atelier: [12, -13], stable: [14, -36], barn: [-52, -80], garden: [-78, -82], workshop: [-128, -66], cottage: [-107, -81], lodge: [-64, 4], cabin: [-76, 64], gatehouse: [-194, 25], oak: [-136, 68] };
     const near = (s, x, z, r) => Math.hypot(x - s[0], z - s[1]) < r;
+    // a point beside the way at u, off to one side, and the turn that faces it to the way; a point part of the way from the way to a site
+    const side = (u, off) => { const a = path.pointAt(u), b = path.pointAt(Math.min(1, u + 0.004)), dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1, x = a.x - (dz / L) * off, z = a.z + (dx / L) * off; return [x, z, Math.atan2(a.x - x, a.z - z)]; };
+    const between = (st, f) => { const a = path.pointAt(path.nearestXZ(st[0], st[1]).u); return [a.x + (st[0] - a.x) * f, a.z + (st[1] - a.z) * f]; };
+    // the campfires: by the Gatehouse, on the farmhouse lawn, in the clearing by the Cottage, and in the ring beside the portal
+    const FIRES = [between(SITES.gatehouse, 0.5), between(SITES.house, 0.55), between(SITES.cottage, 0.5), [-121, -27]];
+    const HAMMOCK = side(0.875, 6.5);
+    const PR = PROPS.concat(FIRES.map(([x, z]) => [x, z, 5]), [[HAMMOCK[0], HAMMOCK[1], 5]]);
     const meadowAt = (x, z) => inPoly(MEADOW, x, z) || inPoly(MEADOW_W, x, z) || inPoly(MEADOW_SE, x, z);
     const yardAt = (x, z) => Math.hypot((x - 2) * 0.85, (z - 18) * 0.8) < 27 + edge(x, z);   // the lawn and the gravel round the house, mostly to its south
     // the clearing in the middle of the wood: the garden, the old barn, the Cottage and the Workshop on one lawn
     const clearAt = (x, z) => yardAt(x, z) || Math.hypot((x + 92) / 50, (z + 70) / 21) < 1 + edge(x, z) * 0.03 || near(SITES.lodge, x, z, 8) || near(SITES.cabin, x, z, 7) || near(SITES.gatehouse, x, z, 8)
       || Math.hypot(x - RING.x, z - RING.z) < RING.r - 2.5 || Math.hypot(x - POND.x, z - POND.z) < POND.r + 1.5
-      || PROPS.some((q) => near(q, x, z, q[2]));   // an opening round each prop of the story, out to the way
+      || PR.some((q) => near(q, x, z, q[2]));   // an opening round each prop of the story, out to the way
     const beltAt = (x, z) => { for (const b of BELTS) if (segD(x, z, b[0], b[1], b[2], b[3]) < 5) return 1; return 0; };
     const woodAt = (x, z) => inPoly(ESTATE, x + edge(x, z), z + edge(z, x));
     const forestAt = (x, z) => (meadowAt(x, z) ? 0 : woodAt(x, z) ? (clearAt(x, z) ? 0 : 1) : beltAt(x, z));
@@ -695,7 +777,7 @@ export default {
     // the shrub layer, close up to the way so the wood stands round it; the young trees above that; the bramble mat on the floor
     const under = (v, o) => { for (const q of flora.scatterPoints({ rng: rt, path, heightAt: hAt, ...o })) { q.v = v; treePts.push(q); } };
     // (not between the way and a hut or a prop: each keeps its view of the path, and the path of it)
-    const open = (x, z) => Math.hypot((x + 92) / 62, (z + 68) / 30) < 1 || near(SITES.house, x, z, 36) || near(SITES.lodge, x, z, 18) || near(SITES.cabin, x, z, 16) || near(SITES.gatehouse, x, z, 18) || near([RING.x, RING.z], x, z, RING.r + 3) || PROPS.some((q) => near(q, x, z, q[2] + 4));
+    const open = (x, z) => Math.hypot((x + 92) / 62, (z + 68) / 30) < 1 || near(SITES.house, x, z, 36) || near(SITES.lodge, x, z, 18) || near(SITES.cabin, x, z, 16) || near(SITES.gatehouse, x, z, 18) || near([RING.x, RING.z], x, z, RING.r + 3) || PR.some((q) => near(q, x, z, q[2] + 4));
     const inWood = (x, z) => (forestAt(x, z) && beekD(x, z) > 1.8 && !open(x, z) ? 1 : 0), patchy = (x, z, f, lo) => lo + (1 - lo) * smoothstep(-0.25, 0.35, noise.n2(x * f + 31, z * f - 17));
     under(6, { count: 2100, radius: 62, corridor: 3.0, spacing: 1.7, falloff: 0.45, scale: [0.75, 1.3], density: (x, z) => inWood(x, z) * patchy(x, z, 0.05, 0.35) });
     under(7, { count: 520, radius: 75, corridor: 4.6, spacing: 3.4, falloff: 0.4, scale: [0.8, 1.25], density: (x, z) => inWood(x, z) * patchy(x, z, 0.03, 0.4) });
@@ -769,12 +851,44 @@ export default {
     { const lr = rng.fork('laptops'); for (const [x, z, ry] of [[-181.9, 63.6, 2.54], [-161.5, 66.8, -0.63], [-152.8, 86, 2.47], [-133.1, 84.7, -0.03], [-113.1, 90.5, -2.67]]) put(stumpLaptop(m, lr), x, z, ry, 0, 2.4); }
     put(pilotShed(m), -87.4, 50, -0.53, 0, 1.5);                              // the pilot that ran once
     put(chairStack(m), -18.6, -9.2, -1.71, 0, 1.4);                           // no seats, on the lawn by the farmhouse
-    put(planPost(m), -38, -49, 0.77, 0, 1.6);                                 // the three steps, where the way turns into the wood
+    const post = put(planPost(m), -38, -49, 0.77, 0, 1.6);                    // the three steps, where the way turns into the wood
     const wv = put(vane(m), -94, -67.6, 1.34, 0, 1.6);                        // any model, switch anytime
     put(cellar(m), -122.1, -55.8, 1.73, 0, 1.5);                              // your data stays here
     put(springSign(m), -77.9, -15.9, -0.34, 0, 2.0);                          // by the brook at the footbridge: every answer shows its source
     put(noticeBoard(m), -132.8, -35.4, 2.15, 0, 1.8);                         // where the way comes into the ring: the next process, pinned by colleagues
     updates.push({ update(dt, t) { wv.userData.arm.rotation.y = 0.35 * Math.sin(t * 0.3) + 0.12 * Math.sin(t * 1.1 + 1.3); } });   // the vane never settles
+    { const head = post.userData.owl.userData.head; updates.push({ update(dt, t) { head.rotation.y = 1.1 * Math.sin(t * 0.33) * Math.min(1, Math.abs(Math.sin(t * 0.33)) * 3); } }); }
+    await ctx.yield();
+
+    // ----- the romance of the place: campfires, lanterns along the way, lights strung in the ring, a hammock, frogs and lilies -----
+    const lampMats = S.makeMaterials({ night: 0.8 });
+    for (const [x, z] of FIRES) { const f = put(campfire(m, rng.fork('fire' + x)), x, z, rng() * TAU); updates.push({ update: (dt, t) => f.userData.update(t) }); }
+    { const lit = [];
+      for (let u = 0.36, k = 0; u < 0.985; u += 0.0125, k++) {
+        const [x, z, ry] = side(u, k % 2 ? 2.9 : -2.9);
+        if (!woodAt(x, z) || meadowAt(x, z) || PR.some((q) => near(q, x, z, 3.5)) || beekD(x, z) < 2) continue;
+        put(lanternPost(m), x, z, ry - Math.PI / 2);
+        lit.push([x + Math.sin(ry) * 0.62, hAt(x, z) + 2.55, z + Math.cos(ry) * 0.62]);
+      }
+      // and over the farmhouse fire, lanterns hung on a line between two poles
+      const [fx2, fz2] = FIRES[1];
+      for (const dx of [-4.2, 4.2]) box(built, m.wood, 0.12, 3.6, 0.12, fx2 + dx, hAt(fx2 + dx, fz2), fz2);
+      await attempt('lanterns', () => S.makeLanterns({ rng: rng.fork('lanterns'), positions: lit, shape: 'round', float: false, size: 0.55, sway: 0.05, haloSize: 2.6, mats: lampMats, colors: ['#ffb050', '#ffc878', '#ff9a40'] }));
+      const R = RING.r - 0.9, ringAt = (k, y) => { const a = ((k + 0.5) / 6) * TAU, x = RING.x + Math.cos(a) * R, z = RING.z + Math.sin(a) * R; return [x, hAt(x, z) + y, z]; };
+      const spans = []; for (let k = 0; k < 6; k++) spans.push([ringAt(k, 6.5), ringAt((k + 1) % 6, 6.5)]);
+      for (let k = 0; k < 3; k++) spans.push([ringAt(k, 12), ringAt(k + 3, 12)]);   // three lines crossing high over the portal
+      spans.push([[fx2 - 4.2, hAt(fx2 - 4.2, fz2) + 3.5, fz2], [fx2 + 4.2, hAt(fx2 + 4.2, fz2) + 3.5, fz2]]);
+      await attempt('string lights', () => S.makeStringLights({ rng: rng.fork('snoer'), spans, sag: 0.09, spacing: 0.85, size: 0.36, twinkle: 0.6, mats: lampMats, colors: ['#ffd9a0', '#ffc070', '#ffe8c0'] })); }
+    put(hammock(m), HAMMOCK[0], HAMMOCK[1], HAMMOCK[2] + Math.PI / 2);
+    { // lilies on the pool, and frogs on some of them and along the banks of the brook by the footbridge
+      const lr = rng.fork('lilies'), lv = G - 0.42, pads = [];
+      for (let k = 0; k < 16; k++) { const a = lr() * TAU, r = Math.sqrt(lr()) * (POND.r - 1), x = POND.x + Math.cos(a) * r, z = POND.z + Math.sin(a) * r, s2 = lr.range(0.35, 0.7);
+        const pad = new THREE.Mesh(new THREE.CircleGeometry(s2, 12, 0.3, TAU - 0.3), m.lily); pad.rotation.x = -Math.PI / 2; pad.rotation.z = lr() * TAU; pad.position.set(x, lv, z); built.add(pad); pads.push([x, z, s2]);
+        if (k % 4 === 1) { const fl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 5, 0, TAU, 0, Math.PI / 2), m.lilyFlower); fl.position.set(x + 0.1, lv, z); built.add(fl); } }
+      const spots = pads.filter((_, k) => k % 4 === 2).map(([x, z]) => [x, z, lv + 0.02]);
+      for (let k = 0; spots.length < 14 && k < 200; k++) { const seg = lr.int(0, 3), a = BEEK[seg], b = BEEK[seg + 1], t = lr(), x0 = a[0] + (b[0] - a[0]) * t, z0 = a[1] + (b[1] - a[1]) * t, L = Math.hypot(b[0] - a[0], b[1] - a[1]), sd = lr.chance(0.5) ? 1.7 : -1.7;
+        const x = x0 - ((b[1] - a[1]) / L) * sd, z = z0 + ((b[0] - a[0]) / L) * sd; if (Math.hypot(x + 81, z - 1) > 16) continue; spots.push([x, z, undefined, Math.atan2(x0 - x, z0 - z)]); }
+      const fr = frogs(m, spots, lr, hAt); built.add(fr); updates.push({ update: (dt, t) => fr.userData.update(t) }); }
     await ctx.yield();
 
     // ----- the kabouters: behind trunks beside the way, one every so often, and a few behind what people left standing -----
@@ -800,6 +914,18 @@ export default {
     add('roe deer', () => F.makeHerd({ rng: rng.fork('roe'), species: 'deer', pattern: 'none', coat: '#9a6a3e', count: 3, size: 0.72, heightAt: hAt, light, center: [-66, 0, -34], radius: 7, path, clear: 11 }));
     add('roe deer far', () => F.makeHerd({ rng: rng.fork('roe2'), species: 'deer', pattern: 'none', coat: '#8a5e38', count: 2, size: 0.72, heightAt: hAt, light, center: [-160, 0, -52], radius: 6, path, clear: 12 }));
     await ctx.yield();
+    // more of the Veluwe: red deer out on the west meadow, a sounder of wild boar at the meadow's edge, a fox, hares, fireflies in the dusk of the wood
+    const V = F.HERD_PRESETS;
+    add('red deer', () => F.makeHerd({ rng: rng.fork('edelherten'), preset: { ...V.deer, h: 1.25, antlers: 1.0, pattern: 'none', varieties: 0.5, count: 6 }, coat: '#7c4e2e', count: 6, heightAt: hAt, light, center: [-345, 0, 150], radius: 16, path, clear: 12 }));
+    add('wild boar', () => F.makeHerd({ rng: rng.fork('zwijnen'), preset: { ...V.bison, h: 0.85, bodyLen: 1.05, width: 0.36, depth: 0.55, hip: 0.92, neckLen: 0.12, neckAng: -4, neck: [0.3, 0.22], headLen: 0.5, headR: 0.12, headPitch: 62, ears: 0.12, tail: 0.25, tailType: 'thin', horns: 0, hump: 0.1, graze: 1.0, pattern: 'none', speed: 0.7, count: 6, sizes: [1, 0.92, 0.45, 0.42, 0.4, 0.44] },
+      coat: '#3e352d', count: 6, heightAt: hAt, light, center: [-112, 0, 30], radius: 8, path, clear: 8 }));
+    add('fox', () => F.makeHerd({ rng: rng.fork('vos'), preset: { ...V.deer, h: 0.42, bodyLen: 1.3, width: 0.22, depth: 0.3, leg: [0.05, 0.035, 0.025], neckLen: 0.32, neckAng: 32, neck: [0.12, 0.08], headLen: 0.36, headR: 0.075, headPitch: 8, ears: 0.24, tail: 1.0, tailType: 'flow', antlers: 0, pattern: 'none', speed: 1.5, varieties: 0, count: 2 },
+      coat: '#c8622a', belly: '#f2e8dc', legs: '#2a1e16', sock: '#2a1e16', accent: '#f2e8dc', count: 2, heightAt: hAt, light, center: [-150, 0, 100], radius: 10, path, clear: 6 }));
+    add('hares', () => F.makeHerd({ rng: rng.fork('hazen'), preset: { ...V.deer, h: 0.32, bodyLen: 0.95, width: 0.3, depth: 0.45, neckLen: 0.2, neckAng: 40, headLen: 0.3, headR: 0.1, ears: 0.6, tail: 0.12, tailType: 'scut', antlers: 0, pattern: 'none', varieties: 0, speed: 1.3, count: 4 },
+      coat: '#9a7a56', count: 4, heightAt: hAt, light, center: [-300, 0, 112], radius: 18, path, clear: 7 }));
+    add('roe deer meadow', () => F.makeHerd({ rng: rng.fork('roe3'), species: 'deer', pattern: 'none', coat: '#a06a3a', count: 3, size: 0.72, heightAt: hAt, light, center: [-128, 0, 112], radius: 8, path, clear: 9 }));
+    add('fireflies', () => F.makeFireflies({ rng: rng.fork('vuurvliegjes'), light, path, count: Math.round(320 * ctx.quality.detail), heightAt: hAt, from: 0.8, to: 1, radius: 18 }));
+    await ctx.yield();
     add('buzzard', () => F.makeFlock({ rng: rng.fork('buzzard'), species: 'eagles', count: 2, center: [-130, G + 44, 70], radius: 46, light, size: 0.7 }));
     // the starlings come in to roost: one cloud of them turning over the meadow
     add('starlings', () => F.makeFlock({ rng: rng.fork('spreeuwen'), species: 'starlings', form: 'murmuration', count: Math.round(900 * ctx.quality.detail), size: 1.6, speed: 12, center: [-130, G + 34, 70], radius: 70, light }));
@@ -815,6 +941,11 @@ export default {
     { const p = gr.userData.pipe.clone().applyMatrix4(gr.updateMatrixWorld(true) || gr.matrixWorld);
       tryFx('smoke', () => fx.makeSmokeColumn({ rng: rng.fork('smoke'), time, position: [p.x, p.y, p.z], count: 34, height: 11, radius: [0.12, 1.6], size: [0.5, 3.4], color: '#cfc9c0', colorTop: '#efe9df', shadowColor: '#8a857c',
         opacity: 0.4, rate: 0.09, wind: [0.9, 0, -0.5], bend: 0.9, rim: 0.4, scatter: 0.4, sunDir, sunColor: sunCol })); }
+    for (const [x, z] of FIRES) { const y = hAt(x, z);
+      tryFx('embers', () => fx.makeParticles({ rng: rng.fork('embers' + x), preset: 'embers', time, count: 46, box: [1.6, 6, 1.6], center: [x, y + 3, z], follow: false, opacity: 0.9 }));
+      tryFx('fire smoke', () => fx.makeSmokeColumn({ rng: rng.fork('firesmoke' + x), time, position: [x, y + 1.1, z], count: 22, height: 9, radius: [0.15, 1.4], size: [0.4, 2.6], color: '#bdb6ad', colorTop: '#e6e0d8', shadowColor: '#7a756c',
+        opacity: 0.28, rate: 0.1, wind: [0.9, 0, -0.5], bend: 0.9, rim: 0.4, scatter: 0.4, sunDir, sunColor: sunCol }));
+      tryFx('fire glow', () => fx.makeGlow({ time, position: [x, y + 0.8, z], color: '#ff9a40', size: 5, intensity: 1.8, flicker: 0.4 })); }
     // shafts of the low sun through the crowns: over the path in the oak wood, and falling into the ring of beeches
     { const down = sunDir.clone().negate(), rayCol = '#ffe6ae';
       const shafts = (label, x, z, o) => tryFx(label, () => { const len = o.length, src = new THREE.Vector3(x, G + 1, z).addScaledVector(down, -len * 0.92);
@@ -852,6 +983,7 @@ export default {
     const arm = sw.userData.arm;
     return {
       scene, path, duration: DURATION,
+      companion: 'wandering-lantern',   // the wandering lantern always goes ahead through this wood
       camera: { fov: 60, near: 0.3, far: 2400, lookAhead: 20, sway: 0.5, bank: 0.4 },
       pois,
       portal: { shape: 'circle', radius: 3.8, color: '#fff3cf', glow: 1.3, revealDistance: 120 },

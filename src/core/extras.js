@@ -66,6 +66,9 @@ export class Extras {
     const ok = COMPANIONS.filter((d) => compatible(d, W.media));
     if (set && set !== 'auto') { const d = COMPANIONS.find((r) => r.id === set); return d && (this.e.opts.freeze || compatible(d, W.media)) ? d : null; }
     if (!ok.length) return null;
+    // a world may name the companion it always flies with (on Auto; one chosen by name or Alone still wins)
+    const own = typeof W.world.companion === 'string' && COMPANIONS.find((d) => d.id === W.world.companion);
+    if (own) return own;
     const prev = ok.find((d) => d.id === prevId);
     if (prev && rng.chance(0.5)) return prev;
     if (!rng.chance(Math.min(0.4, 0.08 * ok.length))) return null;
